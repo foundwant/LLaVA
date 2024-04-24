@@ -169,7 +169,7 @@ class ChatRequest():
     max_new_tokens: Optional[int] = 512
 
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat")
 async def create_chat_completion(request: ChatRequest):
     # args = request
     outputs = eval_model(request)
