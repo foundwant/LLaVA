@@ -3,6 +3,7 @@ from typing import Optional
 
 import torch
 import uvicorn
+from singleton_decorator import singleton
 
 from llava.constants import (
     IMAGE_TOKEN_INDEX,
@@ -49,9 +50,6 @@ def load_images(image_files):
         image = load_image(image_file)
         out.append(image)
     return out
-
-
-from singleton_decorator import singleton
 
 
 @singleton
