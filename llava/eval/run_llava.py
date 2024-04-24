@@ -3,6 +3,7 @@ from typing import Optional
 
 import torch
 import uvicorn
+from fastapi import Response
 from singleton_decorator import singleton
 
 from llava.constants import (
@@ -173,7 +174,7 @@ class ChatRequest():
 async def create_chat_completion(request: ChatRequest):
     # args = request
     outputs = eval_model(request)
-    return outputs
+    return Response(content=outputs)
 
 
 if __name__ == "__main__":
