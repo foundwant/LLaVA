@@ -179,7 +179,7 @@ async def create_chat_completion(request: ChatRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run("openai:app", host="0.0.0.0", port=7890, log_level="info")
+    uvicorn.run("run_llava:app", host="0.0.0.0", port=7890, log_level="info")
 
     # parser = argparse.ArgumentParser()
     # parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
