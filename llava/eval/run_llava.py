@@ -1,5 +1,8 @@
 import argparse
+from typing import Optional
+
 import torch
+import uvicorn
 
 from llava.constants import (
     IMAGE_TOKEN_INDEX,
@@ -10,6 +13,7 @@ from llava.constants import (
 )
 from llava.conversation import conv_templates, SeparatorStyle
 from llava.model.builder import load_pretrained_model
+from llava.serve.model_worker import app
 from llava.utils import disable_torch_init
 from llava.mm_utils import (
     process_images,
@@ -47,14 +51,39 @@ def load_images(image_files):
     return out
 
 
+from singleton_decorator import singleton
+
+
+@singleton
+class Model:
+    def __init__(self):
+        # Model
+        disable_torch_init()
+        model_path = "liuhaotian/llava-v1.6-vicuna-7b"
+
+        model_name = get_model_name_from_path(model_path)
+        tokenizer, model, image_processor, context_len = load_pretrained_model(
+            model_path, None, model_name
+        )
+        self.model = model
+        self.model_name = model_name
+        self.tokenizer = tokenizer
+        self.image_processor = image_processor
+        self.context_len = context_len
+
+
+def get_model() -> Model:
+    return Model()
+
+
 def eval_model(args):
     # Model
-    disable_torch_init()
-
-    model_name = get_model_name_from_path(args.model_path)
-    tokenizer, model, image_processor, context_len = load_pretrained_model(
-        args.model_path, args.model_base, model_name
-    )
+    model_obj = get_model()
+    model = model_obj.model
+    model_name = model_obj.model_name
+    tokenizer = model_obj.tokenizer
+    image_processor = model_obj.image_processor
+    context_len = model_obj.context_len
 
     qs = args.query
     image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
@@ -126,20 +155,43 @@ def eval_model(args):
 
     outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
     print(outputs)
+    return outputs
+
+
+class ChatRequest():
+    model_path: Optional[str] = "liuhaotian/llava-v1.6-vicuna-7b"
+    model_base: Optional[str] = None
+    image_file: str
+    query: str
+    conv_mode: Optional[str] = None
+    sep: Optional[str] = ','
+    temperature: Optional[float] = 0.2
+    top_p: Optional[float] = None
+    num_beams: Optional[int] = 1
+    max_new_tokens: Optional[int] = 512
+
+
+@app.post("/v1/chat/completions")
+async def create_chat_completion(request: ChatRequest):
+    # args = request
+    outputs = eval_model(request)
+    return outputs
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
-    parser.add_argument("--model-base", type=str, default=None)
-    parser.add_argument("--image-file", type=str, required=True)
-    parser.add_argument("--query", type=str, required=True)
-    parser.add_argument("--conv-mode", type=str, default=None)
-    parser.add_argument("--sep", type=str, default=",")
-    parser.add_argument("--temperature", type=float, default=0.2)
-    parser.add_argument("--top_p", type=float, default=None)
-    parser.add_argument("--num_beams", type=int, default=1)
-    parser.add_argument("--max_new_tokens", type=int, default=512)
-    args = parser.parse_args()
+    uvicorn.run("openai:app", host="0.0.0.0", port=7890, log_level="info")
 
-    eval_model(args)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--model-path", type=str, default="facebook/opt-350m")
+    # parser.add_argument("--model-base", type=str, default=None)
+    # parser.add_argument("--image-file", type=str, required=True)
+    # parser.add_argument("--query", type=str, required=True)
+    # parser.add_argument("--conv-mode", type=str, default=None)
+    # parser.add_argument("--sep", type=str, default=",")
+    # parser.add_argument("--temperature", type=float, default=0.2)
+    # parser.add_argument("--top_p", type=float, default=None)
+    # parser.add_argument("--num_beams", type=int, default=1)
+    # parser.add_argument("--max_new_tokens", type=int, default=512)
+    # args = parser.parse_args()
+    #
+    # eval_model(args)
