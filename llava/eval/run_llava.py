@@ -3,7 +3,7 @@ from typing import Optional
 
 import torch
 import uvicorn
-from fastapi import Response
+from fastapi import Response, FastAPI
 from singleton_decorator import singleton
 
 from llava.constants import (
@@ -15,7 +15,6 @@ from llava.constants import (
 )
 from llava.conversation import conv_templates, SeparatorStyle
 from llava.model.builder import load_pretrained_model
-from llava.serve.model_worker import app
 from llava.utils import disable_torch_init
 from llava.mm_utils import (
     process_images,
@@ -30,6 +29,7 @@ from PIL import Image
 from io import BytesIO
 import re
 
+app = FastAPI()
 
 def image_parser(args):
     out = args.image_file.split(args.sep)
@@ -157,7 +157,7 @@ def eval_model(args):
     return outputs
 
 
-class ChatRequest():
+class ChatRequest:
     model_path: Optional[str] = "liuhaotian/llava-v1.6-vicuna-7b"
     model_base: Optional[str] = None
     image_file: str
