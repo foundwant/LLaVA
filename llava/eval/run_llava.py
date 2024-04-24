@@ -4,6 +4,7 @@ from typing import Optional
 import torch
 import uvicorn
 from fastapi import Response, FastAPI
+from pydantic import BaseModel, Field
 from singleton_decorator import singleton
 
 from llava.constants import (
@@ -157,7 +158,7 @@ def eval_model(args):
     return outputs
 
 
-class ChatRequest:
+class ChatRequest(BaseModel):
     model_path: Optional[str] = "liuhaotian/llava-v1.6-vicuna-7b"
     model_base: Optional[str] = None
     image_file: str
@@ -174,7 +175,7 @@ class ChatRequest:
 async def create_chat_completion(request: ChatRequest):
     # args = request
     outputs = eval_model(request)
-    return outputs
+    return Response(content=outputs)
 
 
 if __name__ == "__main__":
