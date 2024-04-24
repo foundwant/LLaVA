@@ -174,7 +174,7 @@ class ChatRequest:
 async def create_chat_completion(request: ChatRequest):
     # args = request
     outputs = eval_model(request)
-    return Response(content=outputs)
+    return outputs
 
 
 if __name__ == "__main__":
